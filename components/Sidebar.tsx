@@ -25,8 +25,8 @@ export const Sidebar: React.FC = () => {
             <span className={`material-symbols-outlined ${isActive('/dashboard') ? 'text-green-700 dark:text-primary icon-filled' : ''}`}>calendar_today</span>
             <span className="text-sm font-bold">Agenda</span>
           </Link>
-          <Link to="/patients" className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${isActive('/patients') ? 'bg-primary/10 text-text-main-light dark:text-white' : 'hover:bg-background-light dark:hover:bg-background-dark/50 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-main-light dark:hover:text-white'}`}>
-            <span className={`material-symbols-outlined ${isActive('/patients') ? 'text-green-700 dark:text-primary icon-filled' : ''}`}>person</span>
+          <Link to="/Pacientes" className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${isActive('/Pacientes') ? 'bg-primary/10 text-text-main-light dark:text-white' : 'hover:bg-background-light dark:hover:bg-background-dark/50 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-main-light dark:hover:text-white'}`}>
+            <span className={`material-symbols-outlined ${isActive('/Pacientes') ? 'text-green-700 dark:text-primary icon-filled' : ''}`}>person</span>
             <span className="text-sm font-medium">Pacientes</span>
           </Link>
           <Link to="/new-appointment" className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${isActive('/new-appointment') ? 'bg-primary/10 text-text-main-light dark:text-white' : 'hover:bg-background-light dark:hover:bg-background-dark/50 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-main-light dark:hover:text-white'}`}>
@@ -41,7 +41,7 @@ export const Sidebar: React.FC = () => {
       </div>
       {/* Bottom User */}
       <div className="flex flex-col gap-2 border-t border-border-light dark:border-border-dark pt-4">
-        <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background-light dark:hover:bg-background-dark/50 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-main-light dark:hover:text-white transition-colors">
+        <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background-light dark:hover:bg-background-dark/50 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-main-light dark:hover:text-white transition-colors">
             <span className="material-symbols-outlined">logout</span>
             <span className="text-sm font-medium">Cerrar Sesión</span>
         </Link>

@@ -18,7 +18,7 @@ function App() {
 
         {/* Todas tus páginas envueltas en el Layout (Sidebar) */}
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-        <Route path="/pacientes" element={<Layout><PatientsList /></Layout>} />
+        <Route path="/Pacientes" element={<Layout><PatientsList /></Layout>} />
         <Route path="/new-appointment" element={<Layout><NewAppointment /></Layout>} />
         <Route path="/settings" element={<Layout><Settings /></Layout>} />
         <Route path="/quick-add" element={<Layout><QuickPatientAdd /></Layout>} />
