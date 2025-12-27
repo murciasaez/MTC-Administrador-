@@ -79,7 +79,7 @@ export const Dashboard: React.FC = () => {
         const telefono = pacienteEncontrado.telefono.replace(/[^0-9]/g, ''); 
         const horaStr = decimalAString(citaEditando.horaInicio);
         const fechaStr = new Date(citaEditando.fecha).toLocaleDateString('es-ES');
-        const texto = `Estimado/a ${citaEditando.paciente}, le recordamos su cita en Clinica SanCai el día ${fechaStr} a las ${horaStr}. Un saludo.`;
+        const texto = `Estimado/a ${citaEditando.paciente}, te escribo para recordarte tu cita el día ${fechaStr} a las ${horaStr}. Nos vemos en la consulta. Un saludo.`;
         
         let link = tipo === 'whatsapp' 
             ? `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`
