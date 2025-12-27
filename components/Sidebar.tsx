@@ -48,7 +48,7 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center gap-3 px-3 py-2 mt-2">
             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-green-800 dark:text-primary font-bold text-xs">Dr.</div>
             <div className="flex flex-col">
-            <p className="text-text-main-light dark:text-white text-xs font-bold">Dr. Liu Wei</p>
+            <p className="text-text-main-light dark:text-white text-xs font-bold">Dra. Isabel Murcia</p>
             <p className="text-text-secondary-light dark:text-text-secondary-dark text-[10px]">Acupuntor Jefe</p>
             </div>
         </div>

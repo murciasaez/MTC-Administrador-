@@ -1,118 +1,236 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// --- TIPOS DE DATOS ---
+type Turno = {
+    activo: boolean;
+    entrada1: string;
+    salida1: string;
+    entrada2: string;
+    salida2: string;
+};
+
+type HorarioSemanal = {
+    [key: string]: Turno; // "lunes": { ... }, "martes": { ... }
+};
 
 export const Settings: React.FC = () => {
+    const navigate = useNavigate();
+
+    // --- ESTADOS ---
+    // 1. Horarios por defecto (si no hay nada guardado)
+    const [horario, setHorario] = useState<HorarioSemanal>(() => {
+        const guardado = localStorage.getItem('configHorario');
+        if (guardado) return JSON.parse(guardado);
+        
+        // Configuración inicial por defecto
+        const defaultDia = { activo: true, entrada1: "09:00", salida1: "14:00", entrada2: "16:00", salida2: "20:00" };
+        return {
+            lunes: { ...defaultDia },
+            martes: { ...defaultDia },
+            miercoles: { ...defaultDia },
+            jueves: { ...defaultDia },
+            viernes: { ...defaultDia },
+            sabado: { ...defaultDia, activo: false }, // Sábado cerrado por defecto
+            domingo: { ...defaultDia, activo: false } // Domingo cerrado
+        };
+    });
+
+    // 2. Lista de días bloqueados/festivos (YYYY-MM-DD)
+    const [bloqueos, setBloqueos] = useState<string[]>(() => {
+        const guardado = localStorage.getItem('configBloqueos');
+        return guardado ? JSON.parse(guardado) : [];
+    });
+
+    // 3. Control del calendario visual (Mes que estamos viendo)
+    const [fechaCalendario, setFechaCalendario] = useState(new Date());
+
+    // --- GUARDAR CAMBIOS ---
+    const handleGuardar = () => {
+        localStorage.setItem('configHorario', JSON.stringify(horario));
+        localStorage.setItem('configBloqueos', JSON.stringify(bloqueos));
+        alert("¡Configuración guardada correctamente!");
+        // Opcional: navigate('/dashboard');
+    };
+
+    // --- LÓGICA DEL HORARIO ---
+    const toggleDia = (dia: string) => {
+        setHorario(prev => ({
+            ...prev,
+            [dia]: { ...prev[dia], activo: !prev[dia].activo }
+        }));
+    };
+
+    const updateHora = (dia: string, campo: keyof Turno, valor: string) => {
+        setHorario(prev => ({
+            ...prev,
+            [dia]: { ...prev[dia], [campo]: valor }
+        }));
+    };
+
+    // --- LÓGICA DEL CALENDARIO (Generador de días) ---
+    const getDiasDelMes = (fecha: Date) => {
+        const year = fecha.getFullYear();
+        const month = fecha.getMonth();
+        const primerDia = new Date(year, month, 1);
+        const ultimoDia = new Date(year, month + 1, 0);
+        
+        const dias = [];
+        // Rellenar huecos vacíos antes del día 1
+        // Ajustamos para que Lunes sea 0 (0=Dom en JS, pero queremos Lunes primero visualmente)
+        let diaSemanaPrimerDia = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
+        
+        for (let i = 0; i < diaSemanaPrimerDia; i++) {
+            dias.push(null);
+        }
+        
+        // Rellenar días reales
+        for (let i = 1; i <= ultimoDia.getDate(); i++) {
+            dias.push(new Date(year, month, i));
+        }
+        return dias;
+    };
+
+    const toggleBloqueo = (date: Date) => {
+        const fechaStr = date.toISOString().split('T')[0];
+        if (bloqueos.includes(fechaStr)) {
+            setBloqueos(bloqueos.filter(b => b !== fechaStr)); // Quitar
+        } else {
+            setBloqueos([...bloqueos, fechaStr]); // Añadir
+        }
+    };
+
+    const diasCalendario = getDiasDelMes(fechaCalendario);
+    const diasSemanaNombres = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    const diasSemanaLabels = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
     return (
-        <div className="flex-1 flex justify-center py-8 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto">
-            <div className="flex flex-col max-w-[1280px] w-full gap-6">
-                {/* Page Heading & Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[#dce5de] dark:border-white/10">
-                    <div className="flex flex-col gap-2">
-                        <h1 className="text-[#111813] dark:text-white text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">Configuración de Horarios</h1>
-                        <p className="text-[#63886c] dark:text-gray-400 text-base font-normal">Gestione la disponibilidad semanal y las excepciones puntuales.</p>
+        <div className="flex-1 w-full max-w-[1400px] mx-auto px-4 md:px-8 py-6 overflow-y-auto">
+            {/* CABECERA */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Configuración de Horarios</h1>
+                    <p className="text-gray-500 mt-1">Gestione la disponibilidad semanal y las excepciones puntuales.</p>
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={() => navigate('/dashboard')} className="px-4 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-100 bg-white border border-gray-200">
+                        Cancelar
+                    </button>
+                    <button onClick={handleGuardar} className="px-4 py-2 rounded-lg font-bold bg-primary hover:bg-primary-dark text-black shadow-lg shadow-primary/20 flex items-center gap-2">
+                        <span className="material-symbols-outlined">save</span>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                
+                {/* COLUMNA IZQUIERDA: HORARIO SEMANAL */}
+                <div className="xl:col-span-2 bg-white dark:bg-[#1a2e20] rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                        <span className="material-symbols-outlined text-primary">view_week</span>
+                        <h2 className="text-xl font-bold dark:text-white">Horario Base Semanal</h2>
                     </div>
-                    <div className="flex gap-3">
-                        <button className="flex items-center justify-center rounded-lg h-10 px-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[#111813] dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
-                            Cancelar
-                        </button>
-                        <button className="flex items-center justify-center rounded-lg h-10 px-6 bg-primary hover:bg-primary-dark text-[#112115] text-sm font-bold shadow-lg shadow-primary/20 transition-all transform active:scale-95">
-                            <span className="material-symbols-outlined mr-2 text-[18px]">save</span>
-                            Guardar Cambios
-                        </button>
+
+                    <div className="space-y-4">
+                        {diasSemanaNombres.map((diaKey, index) => {
+                            const config = horario[diaKey];
+                            return (
+                                <div key={diaKey} className={`flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-xl border transition-colors ${config.activo ? 'bg-gray-50 border-gray-200 dark:bg-black/20 dark:border-gray-700' : 'bg-transparent border-transparent opacity-60'}`}>
+                                    
+                                    {/* Toggle Día */}
+                                    <div className="w-40 flex items-center gap-3">
+                                        <button 
+                                            onClick={() => toggleDia(diaKey)}
+                                            className={`w-12 h-6 rounded-full relative transition-colors ${config.activo ? 'bg-primary' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 size-4 bg-white rounded-full shadow transition-transform ${config.activo ? 'left-7' : 'left-1'}`}></div>
+                                        </button>
+                                        <span className="font-bold capitalize dark:text-white">{diasSemanaLabels[index]}</span>
+                                    </div>
+
+                                    {/* Inputs de Hora */}
+                                    {config.activo ? (
+                                        <div className="flex flex-1 flex-wrap gap-4 items-center">
+                                            <div className="flex items-center gap-2 bg-white dark:bg-[#112115] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                <span className="material-symbols-outlined text-gray-400 text-[18px]">wb_sunny</span>
+                                                <input type="time" value={config.entrada1} onChange={(e) => updateHora(diaKey, 'entrada1', e.target.value)} className="bg-transparent outline-none text-sm font-mono dark:text-white" />
+                                                <span className="text-gray-400">-</span>
+                                                <input type="time" value={config.salida1} onChange={(e) => updateHora(diaKey, 'salida1', e.target.value)} className="bg-transparent outline-none text-sm font-mono dark:text-white" />
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-2 bg-white dark:bg-[#112115] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                <span className="material-symbols-outlined text-gray-400 text-[18px]">bedtime</span>
+                                                <input type="time" value={config.entrada2} onChange={(e) => updateHora(diaKey, 'entrada2', e.target.value)} className="bg-transparent outline-none text-sm font-mono dark:text-white" />
+                                                <span className="text-gray-400">-</span>
+                                                <input type="time" value={config.salida2} onChange={(e) => updateHora(diaKey, 'salida2', e.target.value)} className="bg-transparent outline-none text-sm font-mono dark:text-white" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm font-bold text-gray-400 italic">Cerrado</span>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
-                    {/* Left Column: Weekly Schedule Builder */}
-                    <div className="lg:col-span-7 flex flex-col gap-6">
-                        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-[#e5e7eb] dark:border-white/5 p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold text-[#111813] dark:text-white flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary">calendar_view_week</span>
-                                    Horario Base Semanal
-                                </h2>
-                            </div>
-                            {/* Days List (Simplified mapping) */}
-                            <div className="flex flex-col gap-4">
-                                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map((day) => (
-                                    <div key={day} className="day-row group rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-white dark:hover:bg-white/[0.04] hover:border-primary/30 hover:shadow-sm transition-all p-4">
-                                        <div className="flex flex-wrap items-center justify-between gap-4">
-                                            <div className="flex items-center gap-4 min-w-[140px]">
-                                                <label className="relative inline-flex items-center cursor-pointer">
-                                                    <input type="checkbox" className="sr-only peer toggle-checkbox" defaultChecked />
-                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary toggle-label"></div>
-                                                </label>
-                                                <span className="font-bold text-[#111813] dark:text-white text-lg">{day}</span>
-                                            </div>
-                                            <div className="flex flex-1 flex-col sm:flex-row gap-3 items-center justify-end">
-                                                <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-1.5 rounded border border-gray-200 dark:border-white/10">
-                                                    <span className="material-symbols-outlined text-gray-400 text-[18px]">wb_sunny</span>
-                                                    <input type="time" defaultValue="09:00" className="border-none p-0 h-6 w-20 text-sm bg-transparent focus:ring-0 text-[#111813] dark:text-white font-medium text-center" />
-                                                    <span className="text-gray-400">-</span>
-                                                    <input type="time" defaultValue="14:00" className="border-none p-0 h-6 w-20 text-sm bg-transparent focus:ring-0 text-[#111813] dark:text-white font-medium text-center" />
-                                                </div>
-                                                <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-1.5 rounded border border-gray-200 dark:border-white/10">
-                                                    <span className="material-symbols-outlined text-gray-400 text-[18px]">bedtime</span>
-                                                    <input type="time" defaultValue="16:00" className="border-none p-0 h-6 w-20 text-sm bg-transparent focus:ring-0 text-[#111813] dark:text-white font-medium text-center" />
-                                                    <span className="text-gray-400">-</span>
-                                                    <input type="time" defaultValue="20:00" className="border-none p-0 h-6 w-20 text-sm bg-transparent focus:ring-0 text-[#111813] dark:text-white font-medium text-center" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {/* Closed Day Example */}
-                                <div className="day-row group rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] opacity-60 hover:opacity-100 transition-all p-4">
-                                        <div className="flex flex-wrap items-center justify-between gap-4">
-                                        <div className="flex items-center gap-4 min-w-[140px]">
-                                            <label className="relative inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" className="sr-only peer toggle-checkbox" />
-                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary toggle-label"></div>
-                                            </label>
-                                            <span className="font-bold text-gray-400 dark:text-gray-500 text-lg">Sábado</span>
-                                        </div>
-                                        <div className="flex flex-1 justify-end">
-                                            <span className="text-sm font-medium text-gray-400 italic">Cerrado</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
+                {/* COLUMNA DERECHA: EXCEPCIONES/FESTIVOS */}
+                <div className="xl:col-span-1 space-y-6">
+                    <div className="bg-white dark:bg-[#1a2e20] rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="flex items-center gap-2 mb-6">
+                            <span className="material-symbols-outlined text-red-500">event_busy</span>
+                            <h2 className="text-xl font-bold dark:text-white">Excepciones y Bloqueos</h2>
                         </div>
+
+                        {/* Controles del Mes */}
+                        <div className="flex items-center justify-between mb-4">
+                            <button onClick={() => setFechaCalendario(new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth() - 1, 1))} className="p-1 hover:bg-gray-100 rounded dark:hover:bg-white/10 dark:text-white"><span className="material-symbols-outlined">chevron_left</span></button>
+                            <span className="font-bold capitalize dark:text-white">{fechaCalendario.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                            <button onClick={() => setFechaCalendario(new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth() + 1, 1))} className="p-1 hover:bg-gray-100 rounded dark:hover:bg-white/10 dark:text-white"><span className="material-symbols-outlined">chevron_right</span></button>
+                        </div>
+
+                        {/* Grid Calendario */}
+                        <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <span key={d} className="text-xs font-bold text-gray-400">{d}</span>)}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                            {diasCalendario.map((dia, i) => {
+                                if (!dia) return <div key={i}></div>;
+                                const fechaStr = dia.toISOString().split('T')[0];
+                                const esBloqueado = bloqueos.includes(fechaStr);
+                                
+                                return (
+                                    <button 
+                                        key={i}
+                                        onClick={() => toggleBloqueo(dia)}
+                                        className={`size-10 rounded-lg text-sm font-medium flex items-center justify-center transition-all ${
+                                            esBloqueado 
+                                            ? 'bg-red-500 text-white shadow-md shadow-red-500/30 scale-105' 
+                                            : 'hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {dia.getDate()}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-4 text-center">
+                            Haz clic en un día para marcarlo como <span className="font-bold text-red-500">Cerrado/Festivo</span>.
+                        </p>
                     </div>
-                    {/* Right Column: Calendar & Exceptions */}
-                    <div className="lg:col-span-5 flex flex-col gap-6">
-                        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-[#e5e7eb] dark:border-white/5 p-6 h-fit">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-lg font-bold text-[#111813] dark:text-white flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary">event_busy</span>
-                                    Excepciones y Bloqueos
-                                </h2>
-                            </div>
-                            {/* Simplified Calendar Grid */}
-                            <div className="mb-6">
-                                <div className="grid grid-cols-7 gap-1">
-                                    {[...Array(30).keys()].map(i => {
-                                        const day = i+1;
-                                        let classes = "aspect-square flex items-center justify-center text-sm rounded hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer text-gray-700 dark:text-gray-300";
-                                        if (day === 12) return <div key={i} className="aspect-square flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded cursor-pointer ring-1 ring-red-100 dark:ring-red-900/30" title="Festivo Nacional">12</div>
-                                        if (day === 16) return <div key={i} className="aspect-square flex items-center justify-center text-white text-sm bg-primary rounded shadow-sm cursor-pointer">16</div>
-                                        return <div key={i} className={classes}>{day}</div>
-                                    })}
+
+                    {/* Lista de próximos festivos */}
+                    <div className="bg-red-50 dark:bg-red-900/10 rounded-xl p-4 border border-red-100 dark:border-red-900/30">
+                        <h3 className="text-xs font-bold uppercase text-red-800 dark:text-red-300 mb-3">Próximos Bloqueos</h3>
+                        <div className="space-y-2">
+                            {bloqueos.sort().slice(0, 3).map(fecha => (
+                                <div key={fecha} className="flex items-center gap-2 text-sm text-red-700 dark:text-red-200">
+                                    <span className="material-symbols-outlined text-[16px]">event</span>
+                                    <span>{new Date(fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                 </div>
-                            </div>
-                                {/* Upcoming Blocks List */}
-                            <div className="mt-6">
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 uppercase tracking-wider text-[11px]">Próximos Bloqueos</h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
-                                        <div className="mt-0.5 text-red-500 bg-white dark:bg-red-900/30 rounded p-1">
-                                            <span className="material-symbols-outlined text-[16px] block">celebration</span>
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-red-900 dark:text-red-100">Día de la Hispanidad</p>
-                                            <p className="text-xs text-red-600 dark:text-red-300">12 Oct - Todo el día</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            ))}
+                            {bloqueos.length === 0 && <span className="text-xs text-red-400 italic">No hay días bloqueados.</span>}
                         </div>
                     </div>
                 </div>
