@@ -26,7 +26,7 @@ export const Dashboard: React.FC = () => {
     const [configHorario, setConfigHorario] = useState<HorarioSemanal | null>(null);
     const [configBloqueos, setConfigBloqueos] = useState<string[]>([]);
 
-    // --- LECTURA DE MEMORIA LOCAL (Tu sistema actual que funciona bien) ---
+    // --- LECTURA DE MEMORIA LOCAL ---
     const [citas, setCitas] = useState<Cita[]>(() => {
         try {
             const guardadas = localStorage.getItem('citasLocal');
@@ -64,38 +64,26 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // --- NUEVO: FUNCIÓN PARA ENVIAR MENSAJES 📱 ---
     const abrirMensaje = (tipo: 'whatsapp' | 'sms') => {
         if (!citaEditando) return;
-        
-        // 1. Buscamos el teléfono del paciente en la base de datos local
         const pacientesGuardados = JSON.parse(localStorage.getItem('pacientesLocal') || '[]');
-        // Buscamos el paciente por nombre (asegurándonos de que coincida mayúsculas/minúsculas)
         const pacienteEncontrado = pacientesGuardados.find((p: any) => 
             p.nombre.toLowerCase() === citaEditando.paciente.toLowerCase()
         );
         
         if (!pacienteEncontrado) {
-            alert("⚠️ No se encontró el teléfono de este paciente en el directorio.\nAsegúrate de que el nombre coincide exactamente.");
+            alert("⚠️ No se encontró el teléfono de este paciente.");
             return;
         }
 
-        // Limpiamos el teléfono (quitamos espacios y símbolos)
         const telefono = pacienteEncontrado.telefono.replace(/[^0-9]/g, ''); 
-        
-        // Preparamos el mensaje
         const horaStr = decimalAString(citaEditando.horaInicio);
         const fechaStr = new Date(citaEditando.fecha).toLocaleDateString('es-ES');
         const texto = `Estimado/a ${citaEditando.paciente}, le recordamos su cita en Clinica SanCai el día ${fechaStr} a las ${horaStr}. Un saludo.`;
         
-        // Abrimos el enlace
-        let link = '#';
-        if (tipo === 'whatsapp') {
-            link = `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
-        } else {
-            // Para SMS
-            link = `sms:${telefono}?&body=${encodeURIComponent(texto)}`;
-        }
+        let link = tipo === 'whatsapp' 
+            ? `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`
+            : `sms:${telefono}?&body=${encodeURIComponent(texto)}`;
         
         window.open(link, '_blank');
     };
@@ -139,6 +127,7 @@ export const Dashboard: React.FC = () => {
     };
     const horasDelDia = Array.from({ length: 14 }, (_, i) => i + 8); 
     const citasFiltradas = citas.filter(cita => filtroEstado === 'todos' ? true : cita.estado === filtroEstado);
+
     const renderCita = (cita: Cita) => {
         const colores = {
             programada: "bg-blue-50 border-blue-400 text-blue-900",
@@ -148,111 +137,151 @@ export const Dashboard: React.FC = () => {
         const top = (cita.horaInicio - 8) * 112 + 10;
         const height = cita.duracion * 112 - 10;
         return (
-            <div key={cita.id} onClick={(e) => { e.stopPropagation(); setCitaEditando(cita); }} className={`absolute left-1 right-1 border-l-4 rounded-r-md p-2 shadow-sm cursor-pointer hover:shadow-md transition-all z-10 text-xs flex flex-col justify-between ${colores[cita.estado]}`} style={{ top: `${top}px`, height: `${height}px` }}>
-                <div><p className={`font-bold truncate ${cita.estado === 'cancelada' ? 'line-through' : ''}`}>{cita.paciente}</p><p className="truncate opacity-80">{cita.tipo}</p></div>
+            <div key={cita.id} onClick={(e) => { e.stopPropagation(); setCitaEditando(cita); }} className={`absolute left-1 right-1 border-l-4 rounded-r-md p-2 shadow-sm cursor-pointer hover:shadow-md transition-all z-10 text-[10px] md:text-xs flex flex-col justify-between ${colores[cita.estado]}`} style={{ top: `${top}px`, height: `${height}px` }}>
+                <div className="overflow-hidden">
+                    <p className={`font-bold truncate ${cita.estado === 'cancelada' ? 'line-through' : ''}`}>{cita.paciente}</p>
+                    <p className="truncate opacity-80 hidden xs:block">{cita.tipo}</p>
+                </div>
                 <div className="flex items-center gap-1 mt-1 opacity-70"><span className="material-symbols-outlined !text-[12px]">schedule</span>{decimalAString(cita.horaInicio)}</div>
             </div>
         );
     };
+
     const esHoy = (d: Date) => {
         const h = new Date();
         return d.getDate() === h.getDate() && d.getMonth() === h.getMonth() && d.getFullYear() === h.getFullYear();
     };
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden w-full max-w-[1400px] mx-auto px-4 md:px-8 py-6 h-full">
+        <div className="flex-1 flex flex-col overflow-hidden w-full max-w-[1400px] mx-auto px-2 md:px-8 py-4 md:py-6 h-full">
             {/* CABECERA */}
-            <div className="flex flex-col gap-6 mb-4">
+            <div className="flex flex-col gap-4 mb-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div><h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-main-light dark:text-white">Agenda Semanal</h1><p className="text-[#63886c] dark:text-[#a0bca5] text-sm mt-1">Gestión de citas y disponibilidad.</p></div>
-                    <div className="flex items-center gap-3 bg-white dark:bg-surface-dark p-1.5 rounded-xl border border-[#dce5de] dark:border-[#2c3e2e] shadow-sm relative">
-                        <button onClick={() => setFechaActual(new Date())} className="p-2 hover:bg-[#f0f4f1] rounded-lg text-primary-dark font-bold"><span className="material-symbols-outlined">calendar_today</span></button>
+                    <div>
+                        <h1 className="text-xl md:text-3xl font-bold tracking-tight text-text-main-light dark:text-white">Agenda Semanal</h1>
+                        <p className="text-[#63886c] dark:text-[#a0bca5] text-xs md:text-sm mt-1">Gestión de citas.</p>
+                    </div>
+                    
+                    {/* Controles de Fecha Adaptados */}
+                    <div className="flex items-center justify-between md:justify-end gap-2 bg-white dark:bg-surface-dark p-1.5 rounded-xl border border-[#dce5de] dark:border-[#2c3e2e] shadow-sm">
+                        <button onClick={() => setFechaActual(new Date())} className="p-2 md:p-2 hover:bg-[#f0f4f1] rounded-lg text-primary-dark font-bold"><span className="material-symbols-outlined text-[20px] md:text-[24px]">calendar_today</span></button>
                         <div className="h-6 w-px bg-[#dce5de]"></div>
-                        <button onClick={() => cambiarSemana(-7)} className="p-2 hover:bg-[#f0f4f1] rounded-lg"><span className="material-symbols-outlined">chevron_left</span></button>
-                        <div className="relative group">
+                        <button onClick={() => cambiarSemana(-7)} className="p-2 hover:bg-[#f0f4f1] rounded-lg"><span className="material-symbols-outlined text-[20px] md:text-[24px]">chevron_left</span></button>
+                        <div className="relative flex-1 md:flex-none text-center">
                             <input ref={dateInputRef} type="date" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20" onChange={(e) => setFechaActual(new Date(e.target.value))}/>
-                            <span className="text-sm font-semibold px-2 min-w-[140px] text-center select-none cursor-pointer flex items-center justify-center gap-2">{fechaActual.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} <span className="text-xs opacity-50 bg-gray-100 px-1 rounded">▼</span></span>
+                            <span className="text-xs md:text-sm font-semibold px-2 whitespace-nowrap">{fechaActual.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}</span>
                         </div>
-                        <button onClick={() => cambiarSemana(7)} className="p-2 hover:bg-[#f0f4f1] rounded-lg"><span className="material-symbols-outlined">chevron_right</span></button>
+                        <button onClick={() => cambiarSemana(7)} className="p-2 hover:bg-[#f0f4f1] rounded-lg"><span className="material-symbols-outlined text-[20px] md:text-[24px]">chevron_right</span></button>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <button onClick={() => setFiltroEstado('todos')} className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${filtroEstado === 'todos' ? 'bg-primary text-black scale-105' : 'bg-white border hover:border-primary'}`}><span>Todos</span></button>
-                    <button onClick={() => setFiltroEstado('programada')} className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${filtroEstado === 'programada' ? 'border-blue-500 bg-blue-50' : 'bg-white hover:border-primary'}`}><span className="size-2 rounded-full bg-blue-400"></span><span>Programada</span></button>
-                    <button onClick={() => setFiltroEstado('atendida')} className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${filtroEstado === 'atendida' ? 'border-green-500 bg-green-50' : 'bg-white hover:border-primary'}`}><span className="size-2 rounded-full bg-green-500"></span><span>Atendida</span></button>
-                    <button onClick={() => setFiltroEstado('cancelada')} className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${filtroEstado === 'cancelada' ? 'border-red-500 bg-red-50' : 'bg-white hover:border-primary'}`}><span className="size-2 rounded-full bg-red-400"></span><span>Cancelada</span></button>
+
+                {/* Filtros Scrollables en móvil */}
+                <div className="flex overflow-x-auto gap-2 pb-2 -mx-2 px-2 no-scrollbar">
+                    <button onClick={() => setFiltroEstado('todos')} className={`flex-none px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all ${filtroEstado === 'todos' ? 'bg-primary text-black' : 'bg-white border'}`}>Todos</button>
+                    <button onClick={() => setFiltroEstado('programada')} className={`flex-none px-4 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${filtroEstado === 'programada' ? 'border-blue-500 bg-blue-50' : 'bg-white'}`}>Programada</button>
+                    <button onClick={() => setFiltroEstado('atendida')} className={`flex-none px-4 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${filtroEstado === 'atendida' ? 'border-green-500 bg-green-50' : 'bg-white'}`}>Atendida</button>
+                    <button onClick={() => setFiltroEstado('cancelada')} className={`flex-none px-4 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${filtroEstado === 'cancelada' ? 'border-red-500 bg-red-50' : 'bg-white'}`}>Cancelada</button>
                 </div>
             </div>
 
-            {/* CALENDARIO */}
+            {/* CALENDARIO CON SCROLL HORIZONTAL PARA MÓVIL */}
             <div className="flex-1 relative bg-white dark:bg-surface-dark rounded-xl border border-[#dce5de] shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className="grid grid-cols-[80px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] z-10 sticky top-0">
-                    <div className="p-4 border-r border-[#dce5de] flex items-center justify-center"><span className="text-xs font-bold uppercase text-[#63886c]">Hora</span></div>
-                    <div className="grid grid-cols-7 divide-x divide-[#dce5de]">
-                        {diasSemana.map((dia, index) => {
-                            const esHoyDia = esHoy(dia);
-                            const cerrado = esDiaCerrado(dia);
-                            return <div key={index} className={`p-3 text-center transition-colors ${esHoyDia ? 'bg-primary/10' : ''} ${cerrado ? 'bg-gray-100 opacity-60' : ''}`}><span className={`block text-xs uppercase font-semibold ${esHoyDia ? 'text-primary-dark' : 'text-[#63886c]'}`}>{dia.toLocaleDateString('es-ES', { weekday: 'short' })}</span><span className={`block text-lg font-bold ${esHoyDia ? 'text-primary-dark' : 'text-gray-700'}`}>{dia.getDate()}</span></div>;
-                        })}
-                    </div>
-                </div>
-                <div className="flex-1 overflow-y-auto relative">
-                    <div className="grid grid-cols-[80px_1fr]">
-                        <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc]">
-                            {horasDelDia.map(hour => <div key={hour} className="h-28 flex items-start justify-center pt-2"><span className="text-xs font-medium text-[#63886c]">{hour}:00</span></div>)}
+                <div className="overflow-x-auto flex-1 flex flex-col">
+                    <div className="min-w-[700px] flex-1 flex flex-col">
+                        {/* Cabecera Horas/Días */}
+                        <div className="grid grid-cols-[60px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] z-10 sticky top-0">
+                            <div className="p-2 border-r border-[#dce5de] flex items-center justify-center"><span className="text-[10px] font-bold uppercase text-[#63886c]">Hora</span></div>
+                            <div className="grid grid-cols-7 divide-x divide-[#dce5de]">
+                                {diasSemana.map((dia, index) => (
+                                    <div key={index} className={`p-2 text-center ${esHoy(dia) ? 'bg-primary/10' : ''} ${esDiaCerrado(dia) ? 'bg-gray-100 opacity-60' : ''}`}>
+                                        <span className="block text-[10px] uppercase font-semibold text-[#63886c]">{dia.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                        <span className="block text-base font-bold text-gray-700">{dia.getDate()}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white">
-                            {diasSemana.map((dia, index) => {
-                                const fechaColumna = dia.toISOString().split('T')[0];
-                                const citasDelDia = citasFiltradas.filter(c => c.fecha === fechaColumna);
-                                const cerrado = esDiaCerrado(dia);
-                                return <div key={index} className={`relative h-full border-b border-[#dce5de] ${esHoy(dia) ? 'bg-primary/5' : ''}`}>
-                                    {cerrado ? <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center z-20 backdrop-blur-[1px]"><div className="flex flex-col items-center opacity-40"><span className="material-symbols-outlined text-4xl mb-1">block</span></div></div> : <>{citasDelDia.map(renderCita)}<Link to="/new-appointment" className="absolute inset-0 hover:bg-black/5 transition-colors group z-0"><div className="hidden group-hover:flex absolute top-2 right-2 text-primary opacity-50"><span className="material-symbols-outlined">add_circle</span></div></Link></>}
-                                </div>;
-                            })}
+
+                        {/* Cuerpo del Calendario */}
+                        <div className="flex-1 overflow-y-auto relative">
+                            <div className="grid grid-cols-[60px_1fr]">
+                                <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc]">
+                                    {horasDelDia.map(hour => <div key={hour} className="h-28 flex items-start justify-center pt-2"><span className="text-[10px] font-medium text-[#63886c]">{hour}:00</span></div>)}
+                                </div>
+                                <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white">
+                                    {diasSemana.map((dia, index) => {
+                                        const fechaColumna = dia.toISOString().split('T')[0];
+                                        const citasDelDia = citasFiltradas.filter(c => c.fecha === fechaColumna);
+                                        const cerrado = esDiaCerrado(dia);
+                                        return (
+                                            <div key={index} className={`relative h-full border-b border-[#dce5de] ${esHoy(dia) ? 'bg-primary/5' : ''}`}>
+                                                {cerrado ? (
+                                                    <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center z-20 backdrop-blur-[1px]">
+                                                        <span className="material-symbols-outlined text-2xl opacity-20">block</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {citasDelDia.map(renderCita)}
+                                                        <Link to="/new-appointment" className="absolute inset-0 hover:bg-black/5 transition-colors z-0"></Link>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* --- MODAL DE EDICIÓN CON WHATSAPP/SMS (Sin URL externa) --- */}
+            {/* MODAL DE EDICIÓN */}
             {citaEditando && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-[#1a2e20] w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4" onClick={() => setCitaEditando(null)}>
+                    <div className="bg-white dark:bg-[#1a2e20] w-full max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl p-6 md:p-8 animate-in slide-in-from-bottom md:zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold dark:text-white">Editar Cita</h2>
-                            <button onClick={() => setCitaEditando(null)} className="text-gray-400 hover:text-gray-600"><span className="material-symbols-outlined">close</span></button>
+                            <h2 className="text-xl font-bold dark:text-white">Detalle de la Cita</h2>
+                            <button onClick={() => setCitaEditando(null)} className="p-2 text-gray-400 hover:text-gray-600"><span className="material-symbols-outlined">close</span></button>
                         </div>
                         
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-lg dark:text-white">{citaEditando.paciente}</h3>
+                        <div className="space-y-5">
+                            <h3 className="font-bold text-2xl dark:text-white mb-2">{citaEditando.paciente}</h3>
                             
-                            {/* BOTONES NUEVOS DE CONTACTO 📱 */}
-                            <div className="flex gap-2 mb-4">
-                                <button onClick={() => abrirMensaje('whatsapp')} className="flex-1 flex items-center justify-center gap-2 bg-[#DCF8C6] text-[#075E54] py-2 rounded-lg font-bold hover:bg-[#cbf5ad] transition-colors border border-[#075E54]/10">
-                                    <span className="text-lg">📱</span> WhatsApp
-                                </button>
-                                <button onClick={() => abrirMensaje('sms')} className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold hover:bg-blue-100 transition-colors border border-blue-200">
-                                    <span className="material-symbols-outlined text-[18px]">sms</span> SMS
-                                </button>
+                            <div className="flex flex-col md:flex-row gap-2 mb-6">
+                                <button onClick={() => abrirMensaje('whatsapp')} className="flex-1 flex items-center justify-center gap-2 bg-[#e8fce8] text-[#075E54] py-3 rounded-xl font-bold border border-[#075E54]/10">📱 WhatsApp</button>
+                                <button onClick={() => abrirMensaje('sms')} className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-3 rounded-xl font-bold border border-blue-100">SMS</button>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <input type="date" value={citaEditando.fecha} onChange={(e) => setCitaEditando({...citaEditando, fecha: e.target.value})} className="w-full p-2 bg-gray-50 border rounded dark:bg-black/20 dark:border-gray-700 dark:text-white" />
-                                <input type="time" value={decimalAString(citaEditando.horaInicio)} onChange={(e) => setCitaEditando({...citaEditando, horaInicio: stringADecimal(e.target.value)})} className="w-full p-2 bg-gray-50 border rounded dark:bg-black/20 dark:border-gray-700 dark:text-white" />
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Fecha</label>
+                                    <input type="date" value={citaEditando.fecha} onChange={(e) => setCitaEditando({...citaEditando, fecha: e.target.value})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl dark:bg-black/20 dark:border-gray-700 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Hora</label>
+                                    <input type="time" value={decimalAString(citaEditando.horaInicio)} onChange={(e) => setCitaEditando({...citaEditando, horaInicio: stringADecimal(e.target.value)})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl dark:bg-black/20 dark:border-gray-700 dark:text-white" />
+                                </div>
                             </div>
-                            <select value={citaEditando.estado} onChange={(e) => setCitaEditando({...citaEditando, estado: e.target.value as any})} className="w-full p-2 bg-gray-50 border rounded dark:bg-black/20 dark:border-gray-700 dark:text-white">
-                                <option value="programada">Confirmada</option>
-                                <option value="atendida">Atendida</option>
-                                <option value="cancelada">Cancelada</option>
-                            </select>
-                            <textarea value={citaEditando.notas || ''} onChange={(e) => setCitaEditando({...citaEditando, notas: e.target.value})} className="w-full p-2 bg-gray-50 border rounded h-20 dark:bg-black/20 dark:border-gray-700 dark:text-white" placeholder="Notas..."></textarea>
+
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Estado</label>
+                                <select value={citaEditando.estado} onChange={(e) => setCitaEditando({...citaEditando, estado: e.target.value as any})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl dark:bg-black/20 dark:border-gray-700 dark:text-white">
+                                    <option value="programada">Confirmada</option>
+                                    <option value="atendida">Atendida</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Notas Clínicas</label>
+                                <textarea value={citaEditando.notas || ''} onChange={(e) => setCitaEditando({...citaEditando, notas: e.target.value})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl h-24 dark:bg-black/20 dark:border-gray-700 dark:text-white" placeholder="Escribe detalles de la sesión..."></textarea>
+                            </div>
                         </div>
-                        <div className="flex justify-between mt-6 pt-4 border-t dark:border-gray-700">
-                            <button onClick={handleEliminarCita} className="text-red-500 font-bold flex items-center gap-1"><span className="material-symbols-outlined">delete</span> Eliminar</button>
-                            <div className="flex gap-2">
-                                <button onClick={() => setCitaEditando(null)} className="px-4 py-2 rounded bg-gray-100 font-bold">Cancelar</button>
-                                <button onClick={handleActualizarCita} className="px-4 py-2 rounded bg-primary text-black font-bold">Guardar</button>
+
+                        <div className="flex flex-col md:flex-row justify-between gap-3 mt-8 pt-6 border-t dark:border-gray-700">
+                            <button onClick={handleEliminarCita} className="order-2 md:order-1 py-3 text-red-500 font-bold flex items-center justify-center gap-1"><span className="material-symbols-outlined">delete</span> Eliminar</button>
+                            <div className="order-1 md:order-2 flex gap-2">
+                                <button onClick={() => setCitaEditando(null)} className="flex-1 px-6 py-3 rounded-xl bg-gray-100 font-bold">Cerrar</button>
+                                <button onClick={handleActualizarCita} className="flex-1 px-6 py-3 rounded-xl bg-primary text-black font-bold shadow-lg">Guardar</button>
                             </div>
                         </div>
                     </div>
