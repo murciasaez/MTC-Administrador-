@@ -162,7 +162,6 @@ export const Dashboard: React.FC = () => {
                         <p className="text-[#63886c] dark:text-[#a0bca5] text-xs md:text-sm mt-1">Gestión de citas.</p>
                     </div>
                     
-                    {/* Controles de Fecha Adaptados */}
                     <div className="flex items-center justify-between md:justify-end gap-2 bg-white dark:bg-surface-dark p-1.5 rounded-xl border border-[#dce5de] dark:border-[#2c3e2e] shadow-sm">
                         <button onClick={() => setFechaActual(new Date())} className="p-2 md:p-2 hover:bg-[#f0f4f1] rounded-lg text-primary-dark font-bold"><span className="material-symbols-outlined text-[20px] md:text-[24px]">calendar_today</span></button>
                         <div className="h-6 w-px bg-[#dce5de]"></div>
@@ -175,7 +174,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Filtros Scrollables en móvil */}
                 <div className="flex overflow-x-auto gap-2 pb-2 -mx-2 px-2 no-scrollbar">
                     <button onClick={() => setFiltroEstado('todos')} className={`flex-none px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all ${filtroEstado === 'todos' ? 'bg-primary text-black' : 'bg-white border'}`}>Todos</button>
                     <button onClick={() => setFiltroEstado('programada')} className={`flex-none px-4 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${filtroEstado === 'programada' ? 'border-blue-500 bg-blue-50' : 'bg-white'}`}>Programada</button>
@@ -184,30 +182,41 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* CALENDARIO CON SCROLL HORIZONTAL PARA MÓVIL */}
+            {/* CALENDARIO CON SCROLL */}
             <div className="flex-1 relative bg-white dark:bg-surface-dark rounded-xl border border-[#dce5de] shadow-sm overflow-hidden flex flex-col min-h-0">
                 <div className="overflow-x-auto flex-1 flex flex-col">
                     <div className="min-w-[700px] flex-1 flex flex-col">
-                        {/* Cabecera Horas/Días */}
-                        <div className="grid grid-cols-[60px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] z-10 sticky top-0">
-                            <div className="p-2 border-r border-[#dce5de] flex items-center justify-center"><span className="text-[10px] font-bold uppercase text-[#63886c]">Hora</span></div>
+                        
+                        {/* Cabecera Días FIJA (Sticky Top) */}
+                        <div className="grid grid-cols-[60px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark z-30 sticky top-0">
+                            <div className="p-2 border-r border-[#dce5de] flex items-center justify-center bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-40">
+                                <span className="text-[10px] font-bold uppercase text-[#63886c]">Hora</span>
+                            </div>
                             <div className="grid grid-cols-7 divide-x divide-[#dce5de]">
                                 {diasSemana.map((dia, index) => (
-                                    <div key={index} className={`p-2 text-center ${esHoy(dia) ? 'bg-primary/10' : ''} ${esDiaCerrado(dia) ? 'bg-gray-100 opacity-60' : ''}`}>
+                                    <div key={index} className={`p-2 text-center ${esHoy(dia) ? 'bg-primary/10' : ''} ${esDiaCerrado(dia) ? 'bg-gray-100 dark:bg-white/5 opacity-60' : ''}`}>
                                         <span className="block text-[10px] uppercase font-semibold text-[#63886c]">{dia.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                        <span className="block text-base font-bold text-gray-700">{dia.getDate()}</span>
+                                        <span className="block text-base font-bold text-gray-700 dark:text-gray-200">{dia.getDate()}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Cuerpo del Calendario */}
+                        {/* Cuerpo con Columna de Horas FIJA (Sticky Left) */}
                         <div className="flex-1 overflow-y-auto relative">
                             <div className="grid grid-cols-[60px_1fr]">
-                                <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc]">
-                                    {horasDelDia.map(hour => <div key={hour} className="h-28 flex items-start justify-center pt-2"><span className="text-[10px] font-medium text-[#63886c]">{hour}:00</span></div>)}
+                                
+                                {/* Columna Horas Sticky */}
+                                <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-20">
+                                    {horasDelDia.map(hour => (
+                                        <div key={hour} className="h-28 flex items-start justify-center pt-2">
+                                            <span className="text-[10px] font-medium text-[#63886c] bg-[#fcfdfc] dark:bg-surface-dark px-1">{hour}:00</span>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white">
+
+                                {/* Rejilla de Citas */}
+                                <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white dark:bg-surface-dark">
                                     {diasSemana.map((dia, index) => {
                                         const fechaColumna = dia.toISOString().split('T')[0];
                                         const citasDelDia = citasFiltradas.filter(c => c.fecha === fechaColumna);
@@ -215,7 +224,7 @@ export const Dashboard: React.FC = () => {
                                         return (
                                             <div key={index} className={`relative h-full border-b border-[#dce5de] ${esHoy(dia) ? 'bg-primary/5' : ''}`}>
                                                 {cerrado ? (
-                                                    <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center z-20 backdrop-blur-[1px]">
+                                                    <div className="absolute inset-0 bg-gray-100/50 dark:bg-black/20 flex items-center justify-center z-10 backdrop-blur-[1px]">
                                                         <span className="material-symbols-outlined text-2xl opacity-20">block</span>
                                                     </div>
                                                 ) : (
@@ -242,15 +251,12 @@ export const Dashboard: React.FC = () => {
                             <h2 className="text-xl font-bold dark:text-white">Detalle de la Cita</h2>
                             <button onClick={() => setCitaEditando(null)} className="p-2 text-gray-400 hover:text-gray-600"><span className="material-symbols-outlined">close</span></button>
                         </div>
-                        
                         <div className="space-y-5">
                             <h3 className="font-bold text-2xl dark:text-white mb-2">{citaEditando.paciente}</h3>
-                            
                             <div className="flex flex-col md:flex-row gap-2 mb-6">
                                 <button onClick={() => abrirMensaje('whatsapp')} className="flex-1 flex items-center justify-center gap-2 bg-[#e8fce8] text-[#075E54] py-3 rounded-xl font-bold border border-[#075E54]/10">📱 WhatsApp</button>
                                 <button onClick={() => abrirMensaje('sms')} className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-3 rounded-xl font-bold border border-blue-100">SMS</button>
                             </div>
-
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Fecha</label>
@@ -261,7 +267,6 @@ export const Dashboard: React.FC = () => {
                                     <input type="time" value={decimalAString(citaEditando.horaInicio)} onChange={(e) => setCitaEditando({...citaEditando, horaInicio: stringADecimal(e.target.value)})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl dark:bg-black/20 dark:border-gray-700 dark:text-white" />
                                 </div>
                             </div>
-
                             <div>
                                 <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Estado</label>
                                 <select value={citaEditando.estado} onChange={(e) => setCitaEditando({...citaEditando, estado: e.target.value as any})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl dark:bg-black/20 dark:border-gray-700 dark:text-white">
@@ -270,13 +275,11 @@ export const Dashboard: React.FC = () => {
                                     <option value="cancelada">Cancelada</option>
                                 </select>
                             </div>
-
                             <div>
                                 <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Notas Clínicas</label>
                                 <textarea value={citaEditando.notas || ''} onChange={(e) => setCitaEditando({...citaEditando, notas: e.target.value})} className="w-full p-3 bg-gray-50 border-gray-200 border rounded-xl h-24 dark:bg-black/20 dark:border-gray-700 dark:text-white" placeholder="Escribe detalles de la sesión..."></textarea>
                             </div>
                         </div>
-
                         <div className="flex flex-col md:flex-row justify-between gap-3 mt-8 pt-6 border-t dark:border-gray-700">
                             <button onClick={handleEliminarCita} className="order-2 md:order-1 py-3 text-red-500 font-bold flex items-center justify-center gap-1"><span className="material-symbols-outlined">delete</span> Eliminar</button>
                             <div className="order-1 md:order-2 flex gap-2">
