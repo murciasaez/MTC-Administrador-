@@ -9,10 +9,10 @@ export const NewAppointment: React.FC = () => {
 
     // --- ESTADOS ---
     const [paciente, setPaciente] = useState('');
-    const [telefono, setTelefono] = useState(''); // Nuevo campo
+    const [telefono, setTelefono] = useState('');
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-    const [hora, setHora] = useState('09:00');
-    const [duracion, setDuracion] = useState(60);
+    const [horaInicio, setHoraInicio] = useState('09:00');
+    const [horaFin, setHoraFin] = useState('10:00'); // Nuevo campo de fin
     const [tipo, setTipo] = useState('Acupuntura General');
     const [estado, setEstado] = useState('programada');
     const [notas, setNotas] = useState('');
@@ -27,21 +27,34 @@ export const NewAppointment: React.FC = () => {
         }
     }, []);
 
+    // Función auxiliar para convertir "HH:mm" a decimal (ej: "09:30" -> 9.5)
+    const stringADecimal = (str: string) => {
+        const [h, m] = str.split(':').map(Number);
+        return h + (m / 60);
+    };
+
     const handleGuardar = () => {
-        if (!paciente || !fecha || !hora) {
-            alert("⚠️ Faltan datos obligatorios (Nombre, Fecha y Hora).");
+        if (!paciente || !fecha || !horaInicio || !horaFin) {
+            alert("⚠️ Faltan datos obligatorios (Nombre, Fecha, Inicio y Fin).");
             return;
         }
 
-        const [h, m] = hora.split(':').map(Number);
+        const inicio = stringADecimal(horaInicio);
+        const fin = stringADecimal(horaFin);
+
+        if (fin <= inicio) {
+            alert("⚠️ La hora de fin debe ser posterior a la de inicio.");
+            return;
+        }
+
         const nuevaCita = {
             id: Date.now(),
             paciente, 
             tipo,
             estado,
             fecha,
-            horaInicio: h + (m / 60),
-            duracion: duracion / 60,
+            horaInicio: inicio,
+            duracion: fin - inicio, // Duración calculada automáticamente
             notas: notas || ""
         };
 
@@ -55,12 +68,10 @@ export const NewAppointment: React.FC = () => {
 
         let directorioActualizado;
         if (indiceExistente !== -1) {
-            // Si ya existe, solo actualizamos sus notas y teléfono si se ha puesto uno nuevo
             directorioActualizado = directorioActual.map((p: any, i: number) => 
                 i === indiceExistente ? { ...p, notas: notas, telefono: telefono || p.telefono } : p
             );
         } else {
-            // Si NO existe, creamos el paciente nuevo con los datos del formulario
             const nuevoPaciente = {
                 id: Date.now(),
                 nombre: paciente,
@@ -124,14 +135,18 @@ export const NewAppointment: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Fecha</label>
                         <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full px-4 py-3 bg-gray-50 dark:bg-[#112115] border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white" />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Hora</label>
-                        <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full px-4 py-3 bg-gray-50 dark:bg-[#112115] border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white" />
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Hora Inicio</label>
+                        <input type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} className="w-full px-4 py-3 bg-gray-50 dark:bg-[#112115] border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Hora Fin</label>
+                        <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} className="w-full px-4 py-3 bg-gray-50 dark:bg-[#112115] border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white" />
                     </div>
                 </div>
 

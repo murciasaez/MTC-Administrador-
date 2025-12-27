@@ -134,15 +134,30 @@ export const Dashboard: React.FC = () => {
             atendida: "bg-green-50 border-green-500 text-green-900",
             cancelada: "bg-gray-100 border-gray-400 text-gray-500 opacity-70"
         };
-        const top = (cita.horaInicio - 8) * 112 + 10;
-        const height = cita.duracion * 112 - 10;
+        // 112px es la altura de una hora (h-28). Calculamos posición y altura real.
+        const top = (cita.horaInicio - 8) * 112 + 2; 
+        const height = (cita.duracion * 112) - 4; 
+
         return (
-            <div key={cita.id} onClick={(e) => { e.stopPropagation(); setCitaEditando(cita); }} className={`absolute left-1 right-1 border-l-4 rounded-r-md p-2 shadow-sm cursor-pointer hover:shadow-md transition-all z-10 text-[10px] md:text-xs flex flex-col justify-between ${colores[cita.estado]}`} style={{ top: `${top}px`, height: `${height}px` }}>
-                <div className="overflow-hidden">
-                    <p className={`font-bold truncate ${cita.estado === 'cancelada' ? 'line-through' : ''}`}>{cita.paciente}</p>
-                    <p className="truncate opacity-80 hidden xs:block">{cita.tipo}</p>
-                </div>
-                <div className="flex items-center gap-1 mt-1 opacity-70"><span className="material-symbols-outlined !text-[12px]">schedule</span>{decimalAString(cita.horaInicio)}</div>
+            <div 
+                key={cita.id} 
+                onClick={(e) => { e.stopPropagation(); setCitaEditando(cita); }} 
+                className={`absolute left-1 right-1 border-l-4 rounded-md p-1.5 shadow-sm cursor-pointer hover:shadow-md transition-all z-10 flex flex-col justify-start overflow-hidden ${colores[cita.estado]}`} 
+                style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px' }}
+            >
+                <p className={`font-bold truncate text-[10px] md:text-xs ${cita.estado === 'cancelada' ? 'line-through' : ''}`}>
+                    {cita.paciente}
+                </p>
+                {/* Solo mostrar el tipo y la hora si la cita dura más de 30 min para no amontonar texto */}
+                {cita.duracion >= 0.5 && (
+                    <div className="flex flex-col gap-0.5 mt-0.5 opacity-80 text-[9px] md:text-[10px]">
+                        <p className="truncate">{cita.tipo}</p>
+                        <div className="flex items-center gap-1">
+                            <span className="material-symbols-outlined !text-[10px]">schedule</span>
+                            {decimalAString(cita.horaInicio)} - {decimalAString(cita.horaInicio + cita.duracion)}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -153,7 +168,7 @@ export const Dashboard: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden w-full max-w-[1400px] mx-auto px-2 md:px-8 py-4 md:py-6 h-full">
+        <div className="flex-1 w-full max-w-[1400px] mx-auto px-2 md:px-8 py-4 md:py-6 h-full flex flex-col overflow-hidden">
             {/* CABECERA */}
             <div className="flex flex-col gap-4 mb-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -182,12 +197,11 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* CALENDARIO CON SCROLL */}
+            {/* CALENDARIO */}
             <div className="flex-1 relative bg-white dark:bg-surface-dark rounded-xl border border-[#dce5de] shadow-sm overflow-hidden flex flex-col min-h-0">
                 <div className="overflow-x-auto flex-1 flex flex-col scroll-smooth">
                     <div className="min-w-[800px] flex-1 flex flex-col">
                         
-                        {/* Cabecera Días FIJA */}
                         <div className="grid grid-cols-[60px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark z-40 sticky top-0">
                             <div className="p-2 border-r border-[#dce5de] flex items-center justify-center bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-50">
                                 <span className="text-[10px] font-bold uppercase text-[#63886c]">Hora</span>
@@ -202,11 +216,8 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Cuerpo con Columna de Horas FIJA */}
                         <div className="flex-1 relative">
                             <div className="grid grid-cols-[60px_1fr]">
-                                
-                                {/* Columna Horas Sticky Left - CORREGIDA */}
                                 <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-30 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                                     {horasDelDia.map(hour => (
                                         <div key={hour} className="h-28 flex items-start justify-center pt-2 bg-[#fcfdfc] dark:bg-surface-dark">
@@ -215,7 +226,6 @@ export const Dashboard: React.FC = () => {
                                     ))}
                                 </div>
 
-                                {/* Rejilla de Citas */}
                                 <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white dark:bg-surface-dark z-10">
                                     {diasSemana.map((dia, index) => {
                                         const fechaColumna = dia.toISOString().split('T')[0];
