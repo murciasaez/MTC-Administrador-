@@ -9,7 +9,7 @@ type Paciente = {
     ultimaVisita: string;
     estado: 'Activo' | 'Pendiente' | 'Inactivo';
     avatarColor: string;
-    notas?: string; // Nuevo campo para las notas
+    notas?: string; 
 };
 
 type Cita = {
@@ -62,12 +62,9 @@ export const PatientsList: React.FC = () => {
     return (
         <div className="flex-1 flex flex-col w-full max-w-[1400px] mx-auto px-4 md:px-8 py-6 h-full overflow-hidden" onClick={() => setMenuAbiertoId(null)}> 
             
-            {/* CABECERA */}
+            {/* CABECERA (Botón Alta Rápida Eliminado) */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold dark:text-white">Directorio de Pacientes</h1>
-                <Link to="/quick-add" className="bg-primary hover:bg-primary-dark text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors">
-                    <span className="material-symbols-outlined">add</span> Alta Rápida
-                </Link>
             </div>
 
             {/* BUSCADOR */}
@@ -99,7 +96,7 @@ export const PatientsList: React.FC = () => {
                         {pacientesFiltrados.map((paciente) => (
                             <tr key={paciente.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                 <td className="p-4 font-bold dark:text-white flex items-center gap-3">
-                                    <div className={`size-8 rounded-full flex items-center justify-center text-xs text-white ${paciente.avatarColor}`}>{paciente.nombre.charAt(0)}</div>
+                                    <div className={`size-8 rounded-full flex items-center justify-center text-xs text-white ${paciente.avatarColor || 'bg-primary'}`}>{paciente.nombre.charAt(0)}</div>
                                     {paciente.nombre}
                                 </td>
                                 <td className="p-4 text-sm text-gray-600 dark:text-gray-300 font-mono">{paciente.telefono}</td>
@@ -137,7 +134,7 @@ export const PatientsList: React.FC = () => {
                         {/* Cabecera Ficha */}
                         <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-[#1f3325] flex justify-between items-center">
                             <div className="flex items-center gap-4">
-                                <div className={`size-14 rounded-full flex items-center justify-center text-2xl font-bold text-white ${pacienteFicha.avatarColor}`}>{pacienteFicha.nombre.charAt(0)}</div>
+                                <div className={`size-14 rounded-full flex items-center justify-center text-2xl font-bold text-white ${pacienteFicha.avatarColor || 'bg-primary'}`}>{pacienteFicha.nombre.charAt(0)}</div>
                                 <div>
                                     <h2 className="text-xl font-bold dark:text-white">{pacienteFicha.nombre}</h2>
                                     <p className="text-sm text-gray-500 font-mono">{pacienteFicha.telefono}</p>
