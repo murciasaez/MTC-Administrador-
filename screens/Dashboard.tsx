@@ -184,12 +184,12 @@ export const Dashboard: React.FC = () => {
 
             {/* CALENDARIO CON SCROLL */}
             <div className="flex-1 relative bg-white dark:bg-surface-dark rounded-xl border border-[#dce5de] shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className="overflow-x-auto flex-1 flex flex-col">
-                    <div className="min-w-[700px] flex-1 flex flex-col">
+                <div className="overflow-x-auto flex-1 flex flex-col scroll-smooth">
+                    <div className="min-w-[800px] flex-1 flex flex-col">
                         
-                        {/* Cabecera Días FIJA (Sticky Top) */}
-                        <div className="grid grid-cols-[60px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark z-30 sticky top-0">
-                            <div className="p-2 border-r border-[#dce5de] flex items-center justify-center bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-40">
+                        {/* Cabecera Días FIJA */}
+                        <div className="grid grid-cols-[60px_1fr] border-b border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark z-40 sticky top-0">
+                            <div className="p-2 border-r border-[#dce5de] flex items-center justify-center bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-50">
                                 <span className="text-[10px] font-bold uppercase text-[#63886c]">Hora</span>
                             </div>
                             <div className="grid grid-cols-7 divide-x divide-[#dce5de]">
@@ -202,21 +202,21 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Cuerpo con Columna de Horas FIJA (Sticky Left) */}
-                        <div className="flex-1 overflow-y-auto relative">
+                        {/* Cuerpo con Columna de Horas FIJA */}
+                        <div className="flex-1 relative">
                             <div className="grid grid-cols-[60px_1fr]">
                                 
-                                {/* Columna Horas Sticky */}
-                                <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-20">
+                                {/* Columna Horas Sticky Left - CORREGIDA */}
+                                <div className="flex flex-col divide-y divide-[#dce5de] border-r border-[#dce5de] bg-[#fcfdfc] dark:bg-surface-dark sticky left-0 z-30 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                                     {horasDelDia.map(hour => (
-                                        <div key={hour} className="h-28 flex items-start justify-center pt-2">
-                                            <span className="text-[10px] font-medium text-[#63886c] bg-[#fcfdfc] dark:bg-surface-dark px-1">{hour}:00</span>
+                                        <div key={hour} className="h-28 flex items-start justify-center pt-2 bg-[#fcfdfc] dark:bg-surface-dark">
+                                            <span className="text-[10px] font-bold text-[#63886c] dark:text-[#a0bca5]">{hour}:00</span>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Rejilla de Citas */}
-                                <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white dark:bg-surface-dark">
+                                <div className="grid grid-cols-7 divide-x divide-[#dce5de] relative bg-white dark:bg-surface-dark z-10">
                                     {diasSemana.map((dia, index) => {
                                         const fechaColumna = dia.toISOString().split('T')[0];
                                         const citasDelDia = citasFiltradas.filter(c => c.fecha === fechaColumna);
@@ -224,7 +224,7 @@ export const Dashboard: React.FC = () => {
                                         return (
                                             <div key={index} className={`relative h-full border-b border-[#dce5de] ${esHoy(dia) ? 'bg-primary/5' : ''}`}>
                                                 {cerrado ? (
-                                                    <div className="absolute inset-0 bg-gray-100/50 dark:bg-black/20 flex items-center justify-center z-10 backdrop-blur-[1px]">
+                                                    <div className="absolute inset-0 bg-gray-100/50 dark:bg-black/20 flex items-center justify-center z-20 backdrop-blur-[1px]">
                                                         <span className="material-symbols-outlined text-2xl opacity-20">block</span>
                                                     </div>
                                                 ) : (
@@ -245,7 +245,7 @@ export const Dashboard: React.FC = () => {
 
             {/* MODAL DE EDICIÓN */}
             {citaEditando && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4" onClick={() => setCitaEditando(null)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-0 md:p-4" onClick={() => setCitaEditando(null)}>
                     <div className="bg-white dark:bg-[#1a2e20] w-full max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl p-6 md:p-8 animate-in slide-in-from-bottom md:zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold dark:text-white">Detalle de la Cita</h2>
